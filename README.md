@@ -2,7 +2,9 @@ Wrapster
 =======
 
 Ever get tired of specifying long lists of environment variables? 
-[Imgur](http://i.imgur.com/fYrK5K2.png?1)
+
+![sadcat](http://i.imgur.com/fYrK5K2.png "Sad Cat")
+
 Well, tire no more! Store your environment variables in a yaml or json
 file. Then pass them to Wrapster.
 
