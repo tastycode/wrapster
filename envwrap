@@ -1,0 +1,104 @@
+#!/usr/bin/env ruby
+require 'yaml'
+require 'json'
+
+module EnvWrap
+  MissingArgument = Class.new(Exception)
+
+  class CLI
+    def initialize(args = ARGV, env = ENV)
+      @args = args
+      @env = env
+    end
+
+    def execute!
+      env_path, cmd = passed_arguments 
+      application.execute_with_environment(env_path, cmd)
+    rescue Exception => e
+      exit(1)
+    end
+
+
+    def application
+      @application = EnvWrap::Application.new(options)
+    end
+
+    private
+
+    def options
+      @options || {}.tap do |opts|
+        opts[:verbose] = true if @env['VERBOSE']
+      end
+    end
+
+    def passed_arguments
+      raise MissingArgument unless @args[0] && @args[1]
+      [@args[0], @args[1]]
+    end
+
+  end
+
+  class Application
+    def initialize(options = {})
+      @verbose = true if options[:verbose]
+    end
+
+    def execute_with_environment(env_path, cmd)
+      env = resolve_env(env_path)
+      load_env(env)
+      execute(cmd)
+    rescue Exception => e
+      warn %Q{#{e.class} executing "#{cmd}"}
+      warn e.message
+      raise
+    end
+
+    def execute(cmd)
+      log "Executing Command"
+      log cmd
+      exec cmd
+    end
+
+
+    private
+
+    def log(message)
+      puts message if @verbose
+    end
+
+    def load_env(env)
+      log "Loading Environment" 
+      log env.inspect
+      env.each do |key, val|
+        invalid_type = val.class if [Array, Hash].include?(val.class)
+        raise ArgumentError, "Found invalid type #{invalid_type}" if invalid_type
+        ENV[key] = val
+      end
+    end
+
+
+    def resolve_env(env_path)
+      type = check_type(env_path)
+      send(:"load_#{type}", env_path)
+    end
+
+    def check_type(env_path)
+      raise ArgumentError, "Path to env file invalid" unless File.exists?(env_path)
+      return :yaml if env_path =~ /(yml|yaml)$/
+      return :json if env_path =~ /(js|json)$/
+      raise ArgumentError, "Config file #{env_path} must be yaml or json"
+    end
+
+    def load_yaml(yaml_path)
+      YAML.load_file(yaml_path)
+    end
+
+    def load_json(json_path)
+      JSON.parse(File.read(json_path))
+    end
+  end
+end
+
+cli = EnvWrap::CLI.new(ARGV)
+cli.execute!
+
