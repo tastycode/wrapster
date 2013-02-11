@@ -2,7 +2,7 @@
 require 'yaml'
 require 'json'
 
-module EnvWrap
+module Wrapster
   MissingArgument = Class.new(Exception)
 
   class CLI
@@ -18,9 +18,8 @@ module EnvWrap
       exit(1)
     end
 
-
     def application
-      @application = EnvWrap::Application.new(options)
+      @application = Wrapster::Application.new(options)
     end
 
     private
@@ -47,6 +46,7 @@ module EnvWrap
       env = resolve_env(env_path)
       load_env(env)
       execute(cmd)
+
     rescue Exception => e
       warn %Q{#{e.class} executing "#{cmd}"}
       warn e.message
@@ -58,7 +58,6 @@ module EnvWrap
       log cmd
       exec cmd
     end
-
 
     private
 
@@ -99,6 +98,5 @@ module EnvWrap
   end
 end
 
-cli = EnvWrap::CLI.new(ARGV)
+cli = Wrapster::CLI.new(ARGV)
 cli.execute!
-
